@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Timeline Airbnb – v11.2</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --left-w: 100px;
+  --hour-h: 6px;
+  --col-gap: 5px;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: 'Montserrat', Inter, Roboto, Arial, sans-serif;
+  margin: 0;
+  background: #f6f7fb;
+  color: #111;
+  overflow: hidden;
+}
+header {
+  padding: 6px 12px;
+  background: #fff;
+  border-bottom: 1px solid #e6e8ef;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  font-size: 12px;
+}
+h1 { font-size: 13px; margin: 0; font-weight: 600; }
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+button svg { width: 20px; height: 20px; fill: #0c4d10; transition: transform 0.2s; }
+button:hover svg { transform: rotate(180deg); }
+
+#toggleViewBtn {
+  font-size: 11px;
+  background: #0c4d10;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+#toggleViewBtn:hover { background: #116d15; }
+
+main {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 40px);
+  overflow: hidden;
+}
+
+/* TOP TITLES */
+.top-titles {
+  display: block;
+  margin-left: var(--left-w);
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  position: relative;
+  height: 36px;
+  overflow: hidden;
+}
+.topTitlesInner {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  transform: translateX(0);
+  padding-right: 8px;
+  padding-left: 8px;
+}
+.title-cell {
+  flex: 1;
+  text-align: center;
+  padding: 5px 6px;
+  font-weight: 600;
+  font-size: 10px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  color: white;
+  margin-right: 16px;
+  margin-left: 0px;
+}
+
+/* MAIN content */
+.content-area {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+.left-col {
+  width: var(--left-w);
+  background: #fff;
+  border-right: 1px solid #e5e7eb;
+  position: relative;
+  overflow: hidden;
+}
+#leftDays { position: absolute; top: 0; left: 0; right: 0; }
+
+.timeline-wrap {
+  flex: 1;
+  overflow-y: scroll;
+  overflow-x: auto;
+  position: relative;
+  background: #f6f7fb;
+  display: flex;
+}
+.cols {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  flex: 1;
+  min-width: 100%;
+  gap: var(--col-gap);
+}
+.col {
+  flex: 1;
+  background: #fff;
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  min-width: 0;
+  margin: 0 calc(var(--col-gap)/2);
+}
+.reservations { position: relative; z-index: 5; min-height: 200px; }
+.res-block {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  border-radius: 6px;
+  padding: 3px 5px;
+  font-size: 9px;
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  overflow: hidden;
+  z-index: 10;
+}
+.res-block strong { display: block; font-size: 9px; font-weight: 600; }
+.res-block small { display: flex; align-items: center; font-size: 8px; opacity: 0.9; gap: 3px; }
+.res-block small svg { width: 8px; height: 8px; fill: white; }
+
+.day-label { position: absolute; left: 6px; font-size: 10px; font-weight: 600; }
+.hour-mark { position: absolute; left: 0; right: 0; border-top: 1px dashed rgba(0,0,0,0.08); font-size: 8px; color: #777; padding-left: 4px; z-index: 1; }
+.day-separator { position: absolute; left: 0; right: 0; border-top: 1px solid rgba(0,0,0,0.2); z-index: 2; }
+
+.now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: red;
+  z-index: 20;
+  box-shadow: 0 0 6px rgba(255,0,0,0.4);
+}
+
+/* MOBILE */
+@media (max-width: 830px) {
+  h1 { font-size: 10px; }
+  .title-cell { font-size: 9px; margin-right: 0;}
+  :root { --left-w: 72px; }
+  .cols { gap: 4px; }
+  .col { margin: 0 3px; }
+  .res-block { padding: 4px 6px; font-size: 9px; }
+  .day-label { font-size: 9px; left: 4px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <button id="toggleViewBtn">Ver 30 días</button>
+  <h1>Timeline Airbnb – v11.2</h1>
+  <button id="refreshBtn" title="Refrescar">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+      <path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 0 0-8 8h1.5A6.5 6.5 0 0 1 12 5.5c1.93 0 3.68.79 4.95 2.05L14 10h6V4l-2.35 2.35zM6.35 17.65A7.95 7.95 0 0 0 12 20a8 8 0 0 0 8-8h-1.5a6.5 6.5 0 0 1-6.5 6.5c-1.93 0-3.68-.79-4.95-2.05L10 14H4v6l2.35-2.35z"/>
+    </svg>
+  </button>
+</header>
+
+<main>
+  <div class="top-titles" id="topTitles">
+    <div class="topTitlesInner" id="topTitlesInner"></div>
+  </div>
+
+  <div class="content-area">
+    <div class="left-col"><div id="leftDays"></div></div>
+    <div class="timeline-wrap" id="timelineWrap">
+      <div class="cols" id="columnsRoot"></div>
+      <div class="now-line" id="nowLine"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+let viewMode="week";
+const year=new Date().getFullYear();
+const leftDays=document.getElementById("leftDays");
+const columnsRoot=document.getElementById("columnsRoot");
+const topTitlesInner=document.getElementById("topTitlesInner");
+const timelineWrap=document.getElementById("timelineWrap");
+const nowLine=document.getElementById("nowLine");
+const refreshBtn=document.getElementById("refreshBtn");
+const toggleBtn=document.getElementById("toggleViewBtn");
+
+const calendars=[
+  {name:"Irlanda",color:"#3b82f6",url:"https://corsproxy.io/?"+encodeURIComponent("https://www.airbnb.es/calendar/ical/18743149.ics?s=349fa3310dffba146408d02c3b05faaf")},
+  {name:"Temple",color:"#ef4444",url:"https://corsproxy.io/?"+encodeURIComponent("https://www.airbnb.es/calendar/ical/43115208.ics?s=ee65375a0f4b01d60bd35f68100f6b4a")},
+  {name:"Loft 1",color:"#f0c105",url:"https://corsproxy.io/?"+encodeURIComponent("https://www.airbnb.es/calendar/ical/1062269481828088326.ics?s=03ddd43870f50ec2aebbbf2ae06563c2")},
+  {name:"Loft 2",color:"#fb923c",url:"https://corsproxy.io/?"+encodeURIComponent("https://www.airbnb.es/calendar/ical/1145522301313390692.ics?s=4de275e6bf6670c77b9e5862ea4fe26c")},
+  {name:"Loft 3",color:"#a855f7",url:"https://corsproxy.io/?"+encodeURIComponent("https://www.airbnb.es/calendar/ical/1145769467099647375.ics?s=9c49e06acc8d489328e8f6cee049e675")}
+];
+
+function dayOfYear(d){ return Math.floor((d - new Date(d.getFullYear(),0,1)) / 86400000); }
+function parseICalDate(v){ const m=v.match(/(\d{4})(\d{2})(\d{2})/); return m?new Date(+m[1],+m[2]-1,+m[3]):new Date(); }
+function getDayPx(){ return 24*parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hour-h")); }
+
+function adjustHourHeight(){
+  const headerH=document.querySelector('header').offsetHeight||50;
+  const available=window.innerHeight-headerH;
+  const daysVisible=viewMode==="month"?30:7;
+  const dayPx=available/daysVisible;
+  const hourH=dayPx/24;
+  document.documentElement.style.setProperty("--hour-h",hourH.toFixed(4)+"px");
+}
+
+function buildLeftDays(){
+  leftDays.innerHTML="";
+  const dayPx=getDayPx();
+  const daysOfWeek=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+  for(let d=0;d<365;d++){
+    const date=new Date(year,0,d+1);
+    const top=d*dayPx;
+    const dow=daysOfWeek[date.getDay()];
+    const label=document.createElement("div");
+    label.className="day-label";
+    label.textContent=`${dow} ${date.getDate().toString().padStart(2,"0")} ${date.toLocaleString("es-ES",{month:"short"})}`;
+    label.style.top=top+"px";
+    if(date.getDay()===0)label.style.color="red";
+    leftDays.appendChild(label);
+    if(viewMode==="week"){
+      [6,12,18].forEach(h=>{
+        const mark=document.createElement("div");
+        mark.className="hour-mark";
+        mark.style.top=(top+h*parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hour-h")))+"px";
+        mark.textContent=(h===0?"00":h)+":00";
+        leftDays.appendChild(mark);
+      });
+    }
+    const sep=document.createElement("div");
+    sep.className="day-separator";
+    sep.style.top=top+"px";
+    leftDays.appendChild(sep);
+  }
+}
+
+function parseICS(txt){
+  txt=txt.replace(/\r\n[ \t]/g,"");
+  const evs=[];
+  const parts=txt.split(/BEGIN:VEVENT/gi).slice(1);
+  for(const p of parts){
+    const lines=p.split(/\r?\n/);
+    let start=null,end=null,summary="",desc="";
+    for(const l of lines){
+      if(l.startsWith("DTSTART"))start=parseICalDate(l.split(":")[1]);
+      if(l.startsWith("DTEND"))end=parseICalDate(l.split(":")[1]);
+      if(l.startsWith("SUMMARY"))summary=l.split(":")[1];
+      if(l.startsWith("DESCRIPTION"))desc=l.substring(l.indexOf(":")+1);
+    }
+    desc=desc.replace(/de\s*tails/gi,"details").replace(/\\n/g," ").trim();
+    const codeMatch=desc.match(/details\/([A-Z0-9]+)/);
+    const phoneMatch=desc.match(/Last 4 Digits\):\s*(\d{4})/i);
+    const code=codeMatch?codeMatch[1]:"";
+    const phone=phoneMatch?"*****"+phoneMatch[1]:"";
+    if(start&&end&&summary&&!/Airbnb\s*\(not available\)/i.test(summary))
+      evs.push({summary,dtstart:start,dtend:end,code,phone});
+  }
+  return evs;
+}
+
+async function loadCalendars(){
+  columnsRoot.innerHTML="";
+  topTitlesInner.innerHTML="";
+  const dayPx=getDayPx();
+
+  calendars.forEach(({name,color})=>{
+    const titleDiv=document.createElement("div");
+    titleDiv.className="title-cell";
+    titleDiv.textContent=name;
+    titleDiv.style.background=color;
+    topTitlesInner.appendChild(titleDiv);
+  });
+
+  for(const {color,url}of calendars){
+    const col=document.createElement("div");
+    col.className="col";
+    const cont=document.createElement("div");
+    cont.className="reservations";
+    cont.style.height=(365*dayPx)+"px";
+    col.appendChild(cont);
+    columnsRoot.appendChild(col);
+
+    for(let d=0;d<365;d++){
+      const top=d*dayPx;
+      const sep=document.createElement("div");
+      sep.className="day-separator";
+      sep.style.top=top+"px";
+      cont.appendChild(sep);
+      if(viewMode==="week"){
+        [6,12,18].forEach(h=>{
+          const mark=document.createElement("div");
+          mark.className="hour-mark";
+          mark.style.top=(top+h*parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hour-h")))+"px";
+          cont.appendChild(mark);
+        });
+      }
+    }
+
+    try{
+      const r=await fetch(url);
+      const t=await r.text();
+      const evs=parseICS(t);
+      evs.forEach(ev=>{
+        const start=new Date(ev.dtstart); start.setHours(16,0,0,0);
+        const end=new Date(ev.dtend); end.setHours(11,0,0,0);
+        const top=dayOfYear(start)*dayPx+(start.getHours()/24)*dayPx;
+        const height=((end-start)/3600000)*parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hour-h"));
+        const div=document.createElement("div");
+        div.className="res-block";
+        div.style.top=top+"px";
+        div.style.height=Math.max(height,4)+"px";
+        div.style.background=color;
+
+        let infoHTML="";
+        if(ev.code){
+          infoHTML+=`<small><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm6-6h-1V9a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2zm-7-2a3 3 0 0 1 6 0v2h-6V9z'/></svg>${ev.code}</small>`;
+        }
+        if(ev.phone){
+          infoHTML+=`<small><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.07 21 3 13.93 3 5a1 1 0 0 1 1-1h2.5a1 1 0 0 1 1 1c0 1.25.2 2.46.57 3.58a1 1 0 0 1-.24 1.01l-2.21 2.2z'/></svg>${ev.phone}</small>`;
+        }
+
+        div.innerHTML=`<strong>${ev.summary||"Reserva"}</strong>${infoHTML}`;
+        cont.appendChild(div);
+      });
+    }catch(e){}
+  }
+  updateNowMarker();
+  scrollToNowOnce(true);
+}
+
+function scrollToNowOnce(force=false){
+  const now=new Date();
+  const doy=dayOfYear(now);
+  const px=doy*getDayPx()-(getDayPx()*3.5);
+  const top=px>0?px:0;
+  timelineWrap.scrollTo({top});
+  leftDays.style.transform=`translateY(-${timelineWrap.scrollTop}px)`;
+}
+
+function updateNowMarker(){
+  const now=new Date();
+  const doy=dayOfYear(now);
+  const minutesToday=now.getHours()*60+now.getMinutes();
+  const pxPerMinute=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hour-h"))/60;
+  const top=doy*getDayPx()+minutesToday*pxPerMinute;
+  nowLine.style.top=top+"px";
+}
+
+timelineWrap.addEventListener("scroll",()=>leftDays.style.transform=`translateY(-${timelineWrap.scrollTop}px)`);
+refreshBtn.addEventListener("click",()=>loadCalendars());
+toggleBtn.addEventListener("click",()=>{
+  viewMode=viewMode==="week"?"month":"week";
+  toggleBtn.textContent=viewMode==="week"?"Ver 30 días":"Ver 7 días";
+  adjustHourHeight();
+  buildLeftDays();
+  loadCalendars();
+});
+window.addEventListener("resize",()=>{adjustHourHeight();buildLeftDays();loadCalendars();});
+
+adjustHourHeight();buildLeftDays();loadCalendars();setInterval(updateNowMarker,60000);
+</script>
+</body>
+</html>
