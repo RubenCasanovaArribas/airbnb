@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Timeline Airbnb – v11.2</title>
+<title>Timeline Airbnb – v11.4</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -105,6 +105,7 @@ main {
   border-right: 1px solid #e5e7eb;
   position: relative;
   overflow: hidden;
+  padding-top: 0.5px; /* ✅ sincroniza la alineación */
 }
 #leftDays { position: absolute; top: 0; left: 0; right: 0; }
 
@@ -152,7 +153,17 @@ main {
 .res-block small svg { width: 8px; height: 8px; fill: white; }
 
 .day-label { position: absolute; left: 6px; font-size: 10px; font-weight: 600; }
-.hour-mark { position: absolute; left: 0; right: 0; border-top: 1px dashed rgba(0,0,0,0.08); font-size: 8px; color: #777; padding-left: 4px; z-index: 1; }
+.hour-mark {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed rgba(0,0,0,0.12);
+  font-size: 8px;
+  color: #555;
+  padding-left: 4px;
+  z-index: 3; /* ✅ ahora visibles */
+  pointer-events: none;
+}
 .day-separator { position: absolute; left: 0; right: 0; border-top: 1px solid rgba(0,0,0,0.2); z-index: 2; }
 
 .now-line {
@@ -180,7 +191,7 @@ main {
 <body>
 <header>
   <button id="toggleViewBtn">Ver 30 días</button>
-  <h1>Timeline Airbnb – v11.2</h1>
+  <h1>Timeline Airbnb – v11.4</h1>
   <button id="refreshBtn" title="Refrescar">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
       <path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 0 0-8 8h1.5A6.5 6.5 0 0 1 12 5.5c1.93 0 3.68.79 4.95 2.05L14 10h6V4l-2.35 2.35zM6.35 17.65A7.95 7.95 0 0 0 12 20a8 8 0 0 0 8-8h-1.5a6.5 6.5 0 0 1-6.5 6.5c-1.93 0-3.68-.79-4.95-2.05L10 14H4v6l2.35-2.35z"/>
@@ -204,7 +215,10 @@ main {
 
 <script>
 let viewMode="week";
-const year=new Date().getFullYear();
+const currentYear=new Date().getFullYear();
+const nextYear=currentYear+1;
+const totalDays=Math.ceil((new Date(nextYear+1,0,1)-new Date(currentYear,0,1))/86400000);
+
 const leftDays=document.getElementById("leftDays");
 const columnsRoot=document.getElementById("columnsRoot");
 const topTitlesInner=document.getElementById("topTitlesInner");
@@ -221,9 +235,9 @@ const calendars=[
   {name:"Loft 3",color:"#a855f7",url:"https://corsproxy.io/?"+encodeURIComponent("https://www.airbnb.es/calendar/ical/1145769467099647375.ics?s=9c49e06acc8d489328e8f6cee049e675")}
 ];
 
-function dayOfYear(d){ return Math.floor((d - new Date(d.getFullYear(),0,1)) / 86400000); }
-function parseICalDate(v){ const m=v.match(/(\d{4})(\d{2})(\d{2})/); return m?new Date(+m[1],+m[2]-1,+m[3]):new Date(); }
-function getDayPx(){ return 24*parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hour-h")); }
+function dayOfYear(d){return Math.floor((d-new Date(d.getFullYear(),0,1))/86400000);}
+function parseICalDate(v){const m=v.match(/(\d{4})(\d{2})(\d{2})/);return m?new Date(+m[1],+m[2]-1,+m[3]):new Date();}
+function getDayPx(){return 24*parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hour-h"));}
 
 function adjustHourHeight(){
   const headerH=document.querySelector('header').offsetHeight||50;
@@ -238,8 +252,8 @@ function buildLeftDays(){
   leftDays.innerHTML="";
   const dayPx=getDayPx();
   const daysOfWeek=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
-  for(let d=0;d<365;d++){
-    const date=new Date(year,0,d+1);
+  for(let d=0;d<totalDays;d++){
+    const date=new Date(currentYear,0,d+1);
     const top=d*dayPx;
     const dow=daysOfWeek[date.getDay()];
     const label=document.createElement("div");
@@ -248,6 +262,7 @@ function buildLeftDays(){
     label.style.top=top+"px";
     if(date.getDay()===0)label.style.color="red";
     leftDays.appendChild(label);
+
     if(viewMode==="week"){
       [6,12,18].forEach(h=>{
         const mark=document.createElement("div");
@@ -257,6 +272,7 @@ function buildLeftDays(){
         leftDays.appendChild(mark);
       });
     }
+
     const sep=document.createElement("div");
     sep.className="day-separator";
     sep.style.top=top+"px";
@@ -266,8 +282,7 @@ function buildLeftDays(){
 
 function parseICS(txt){
   txt=txt.replace(/\r\n[ \t]/g,"");
-  const evs=[];
-  const parts=txt.split(/BEGIN:VEVENT/gi).slice(1);
+  const evs=[];const parts=txt.split(/BEGIN:VEVENT/gi).slice(1);
   for(const p of parts){
     const lines=p.split(/\r?\n/);
     let start=null,end=null,summary="",desc="";
@@ -301,21 +316,23 @@ async function loadCalendars(){
     topTitlesInner.appendChild(titleDiv);
   });
 
-  for(const {color,url}of calendars){
+  for(const {color,url} of calendars){
     const col=document.createElement("div");
     col.className="col";
     const cont=document.createElement("div");
     cont.className="reservations";
-    cont.style.height=(365*dayPx)+"px";
+    cont.style.height=(totalDays*dayPx)+"px";
     col.appendChild(cont);
     columnsRoot.appendChild(col);
 
-    for(let d=0;d<365;d++){
+    for(let d=0;d<totalDays;d++){
+      const date=new Date(currentYear,0,d+1);
       const top=d*dayPx;
       const sep=document.createElement("div");
       sep.className="day-separator";
       sep.style.top=top+"px";
       cont.appendChild(sep);
+
       if(viewMode==="week"){
         [6,12,18].forEach(h=>{
           const mark=document.createElement("div");
@@ -323,6 +340,27 @@ async function loadCalendars(){
           mark.style.top=(top+h*parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hour-h")))+"px";
           cont.appendChild(mark);
         });
+      }
+
+      // solo mostrar el cambio de año en las columnas de alojamientos
+      if(date.getMonth()===0 && date.getDate()===1 && color){
+        const yearLabel=document.createElement("div");
+        yearLabel.textContent=date.getFullYear();
+        Object.assign(yearLabel.style,{
+          position:"absolute",
+          top:top+"px",
+          left:"50%",
+          transform:"translateX(-50%)",
+          fontSize:"12px",
+          fontWeight:"700",
+          color:"#444",
+          background:"#fff",
+          padding:"2px 6px",
+          borderRadius:"6px",
+          boxShadow:"0 1px 3px rgba(0,0,0,0.1)",
+          zIndex:"15"
+        });
+        cont.appendChild(yearLabel);
       }
     }
 
